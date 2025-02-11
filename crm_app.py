@@ -1,46 +1,60 @@
+# Import necessary libraries
 import streamlit as st
 import pandas as pd
 
-# Load sample data
-@st.cache_data
-def load_data():
-    return generate_sample_data()
+# Initialize a simple database (in-memory)
+if "customers" not in st.session_state:
+    st.session_state["customers"] = pd.DataFrame(columns=["Customer ID", "Name", "Email", "Phone", "Notes"])
 
-data = load_data()
+# Function to add a new customer
+def add_customer(customer_id, name, email, phone, notes):
+    new_customer = pd.DataFrame({
+        "Customer ID": [customer_id],
+        "Name": [name],
+        "Email": [email],
+        "Phone": [phone],
+        "Notes": [notes]
+    })
+    st.session_state["customers"] = pd.concat([st.session_state["customers"], new_customer], ignore_index=True)
 
-# App layout
-st.title("Simulated CRM System")
-st.sidebar.header("Navigation")
-page = st.sidebar.selectbox("Choose a page:", ["Dashboard", "Add Record", "Search Records"])
+# Streamlit App Layout
+st.title("CRM System")
+st.sidebar.title("Navigation")
+menu = st.sidebar.radio("Go to", ["Add Customer", "View Customers", "Search Customer"])
 
-# Dashboard Page
-if page == "Dashboard":
-    st.header("CRM Dashboard")
-    st.dataframe(data)
-    st.write(f"Total Records: {len(data)}")
-
-# Add Record Page
-elif page == "Add Record":
-    st.header("Add New Record")
-    with st.form("add_record_form"):
+# Add Customer Section
+if menu == "Add Customer":
+    st.header("Add New Customer")
+    with st.form("add_customer_form"):
+        customer_id = st.text_input("Customer ID")
         name = st.text_input("Name")
         email = st.text_input("Email")
         phone = st.text_input("Phone")
-        status = st.selectbox("Status", ["Lead", "Contacted", "Customer"])
-        submitted = st.form_submit_button("Submit")
-
+        notes = st.text_area("Notes")
+        submitted = st.form_submit_button("Add Customer")
+        
         if submitted:
-            new_record = {"Name": name, "Email": email, "Phone": phone, "Status": status}
-            data = data.append(new_record, ignore_index=True)
-            st.success("Record added successfully!")
+            add_customer(customer_id, name, email, phone, notes)
+            st.success(f"Customer '{name}' added successfully!")
 
-# Search Records Page
-elif page == "Search Records":
-    st.header("Search Records")
-    search_term = st.text_input("Search by Name or Email")
+# View Customers Section
+elif menu == "View Customers":
+    st.header("Customer List")
+    if not st.session_state["customers"].empty:
+        st.dataframe(st.session_state["customers"])
+    else:
+        st.write("No customers added yet.")
+
+# Search Customer Section
+elif menu == "Search Customer":
+    st.header("Search Customer")
+    search_term = st.text_input("Enter Name or Email to search:")
     if search_term:
-        results = data[data["Name"].str.contains(search_term, case=False) | data["Email"].str.contains(search_term, case=False)]
+        results = st.session_state["customers"][
+            (st.session_state["customers"]["Name"].str.contains(search_term, case=False)) |
+            (st.session_state["customers"]["Email"].str.contains(search_term, case=False))
+        ]
         if not results.empty:
             st.dataframe(results)
         else:
-            st.warning("No records found.")
+            st.write("No matching customers found.")
