@@ -19,6 +19,7 @@ def add_customer(customer_id, name, email, phone, notes):
 
 # Streamlit App Layout
 st.title("CRM System")
+st.subtitle("By: Anthony Meno")
 st.sidebar.title("Navigation")
 menu = st.sidebar.radio("Go to", ["Add Customer", "View Customers", "Search Customer"])
 
